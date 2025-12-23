@@ -1,7 +1,20 @@
 const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, REST, Routes, PermissionFlagsBits, ChannelType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 const config = require('./config');
+
+// HTTP сервер для Render (keep-alive)
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot is running!');
+}).listen(PORT, () => {
+  console.log(`🌐 HTTP сервер запущен на порту ${PORT}`);
+});
+
+// ID канала для пинга (keep-alive)
+const PING_CHANNEL_ID = '1452706903036526797';
 
 const client = new Client({
   intents: [
@@ -202,6 +215,20 @@ function getRandomGift() {
 
 client.once('ready', async () => {
   console.log(`✅ Бот ${client.user.tag} запущен!`);
+  
+  // Keep-alive пинг каждые 10 минут
+  setInterval(async () => {
+    try {
+      const channel = await client.channels.fetch(PING_CHANNEL_ID);
+      if (channel) {
+        const msg = await channel.send('🏓 Ping! (keep-alive)');
+        await msg.delete().catch(() => {});
+        console.log('🏓 Keep-alive ping отправлен');
+      }
+    } catch (err) {
+      console.error('Ошибка keep-alive:', err.message);
+    }
+  }, 10 * 60 * 1000); // 10 минут
   
   // Автоматически присоединяемся к тредам форума
   try {

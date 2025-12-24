@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, ActionRowB
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const config = require('./config');
 
 // HTTP сервер для Render (keep-alive)
@@ -12,6 +13,18 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`🌐 HTTP сервер запущен на порту ${PORT}`);
 });
+
+// Self-ping каждые 5 минут чтобы Render не усыплял
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL;
+if (RENDER_URL) {
+  setInterval(() => {
+    https.get(RENDER_URL, (res) => {
+      console.log(`🔄 Self-ping: ${res.statusCode}`);
+    }).on('error', (err) => {
+      console.error('Self-ping error:', err.message);
+    });
+  }, 5 * 60 * 1000); // 5 минут
+}
 
 // ID канала для пинга (keep-alive)
 const PING_CHANNEL_ID = '1452706903036526797';
